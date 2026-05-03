@@ -1,0 +1,51 @@
+- name: Deploy Campus Application
+  hosts: localhost
+  connection: local
+  become: false
+
+  vars:
+    backend_image: "siddhhhhh/campus-backend:latest"
+    frontend_image: "siddhhhhh/campus-frontend:latest"
+    mongo_uri: "mongodb+srv://mahig1705:Mahi%401705@cluster0.nfeadj3.mongodb.net/campus?retryWrites=true&w=majority"
+
+  tasks:
+    # 🔽 Pull latest images
+    - name: Pull latest backend image
+      shell: docker pull {{ backend_image }}
+
+    - name: Pull latest frontend image
+      shell: docker pull {{ frontend_image }}
+
+    # 🔽 Remove old containers (safe)
+    - name: Remove old backend container
+      shell: docker rm -f backend || true
+
+    - name: Remove old frontend container
+      shell: docker rm -f frontend || true
+
+    # 🔽 Run backend
+    - name: Run backend container
+      shell: |
+        docker run -d -p 5000:5000 \
+          --name backend \
+          --restart unless-stopped \
+          -e MONGO_URI="{{ mongo_uri }}" \
+          {{ backend_image }}
+
+    # 🔽 Run frontend
+    - name: Run frontend container
+      shell: |
+        docker run -d -p 3000:80 \
+          --name frontend \
+          --restart unless-stopped \
+          {{ frontend_image }}
+
+    # 🔽 Verify containers (FIXED)
+    - name: Verify containers
+      shell: docker ps
+      register: container_status
+
+    # 🔽 Print output
+    - name: Print container status
+      debug:
+        msg: "{{ container_status.stdout }}"
